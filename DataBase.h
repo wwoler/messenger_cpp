@@ -2,66 +2,46 @@
 #include <fstream>
 #include <string>
 #include <memory>
-
+#include "Singleton.h"
 
 class Message;
 class User;
 
-class Erase
-{
-public:
-	Erase() = default;
-	Erase(Erase const&) = delete;
-	Erase& operator=(Erase const&) = delete;
-	Erase(Erase const&&) = delete;
-	Erase& operator=(Erase const&&) = delete;
-
-	virtual ~Erase() = default;
-};
-
-
-template <class T>
-class Singleton : private Erase
-{
-public:
-	static T& get_instance()
-	{
-		static T instance;
-		return instance;
-	}
-
-protected:
-	Singleton() = default;
-};
 
 
 
-class DataBase : public Singleton<DataBase>
+class DataBase final : public Singleton<DataBase>
 {
 private:
-	std::unique_ptr<std::fstream> _finout;
+	std::unique_ptr<std::ofstream> _fout;
+	std::unique_ptr<std::ifstream> _fin;
+	std::string                    _path;
+
+	auto createDir(std::string const& dirName)                           -> void;
 
 public:
-	DataBase() :
-		_finout(nullptr) {};
+	DataBase(std::string const&& path = "./Users/") :
+		_fin(nullptr), _fout(nullptr), _path(path) {};
 
-	DataBase(std::unique_ptr<std::fstream>&& src) :
-		_finout(std::move(src)) {}
+	DataBase(std::unique_ptr<std::ofstream>&& srcof,
+		std::unique_ptr<std::ifstream>&& srcif,
+		std::string const&& path = "./Users/") :
+		_fout(std::move(srcof)), _fin(std::move(srcif)), _path(path) {}
 
 
-	auto login(User const& userID)                                      -> bool;
+	auto login(/*User const& userID*/std::string const& userID)         -> bool;
 
-	auto signUp(User const& UserID)                                     -> bool;
+	auto signUp(/*User const& userID*/std::string const& userID)        -> bool;
 
 	auto isExisting(std::string const& userID)                          -> bool;
 
-	auto deleteUser(std::string const& userID)                          -> void;
+	auto deleteUser()                                                   -> void;
 
-	auto clearChar(std::string const& userID)                           -> void;
+	auto clearChat(std::string const& userID)                           -> void;
 
-	auto getMessages(std::string const& userID)                         -> Message const* const;
+	auto getMessages(std::string const& userID)                         -> void;//std::unique_ptr<Message>;
 
-	auto sendMessage(Message const& message, std::string const& userID) -> void;
+	auto sendMessage(/*Message const& message,*/ std::string const& userID) -> void;
 
 
 	~DataBase() = default;
