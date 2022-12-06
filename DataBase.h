@@ -1,52 +1,43 @@
 #pragma once
+#include <filesystem>
+#include "Singleton.h"
+#include "User.h"
+#include "Message.h"
 #include <fstream>
 #include <string>
 #include <memory>
-#include "Singleton.h"
+#include <iostream>
+#include <chrono>
+#include <nlohmann/json.hpp>
 
-class Message;
-class User;
-
-
-
-
-class DataBase final : public Singleton<DataBase>
+class DataBase : public Singleton<DataBase>
 {
 private:
-	std::unique_ptr<std::ofstream> _fout;
-	std::unique_ptr<std::ifstream> _fin;
-	std::string                    _path;
+	friend class Chat;
 
-	auto createDir(std::string const& dirName)                           -> void;
+	std::fstream                    _finout;
+	std::wstring                    _path;
+	auto to_json(User& user)        ->void;
+	auto to_json(Message& mess)     ->void;
+	auto from_json(User& user)      ->void;
+	auto from_json(Message& mess)   ->void;
+
+	auto login(User& userID)                                                 ->bool;
+
+	auto signUp(User& userID)                                                ->bool;
+
+	auto isExisting(User& userID)                                            ->bool;
+
+	auto clearChat(std::wstring const& user1, std::wstring const& user2)     ->void;
+
+	auto getMessages(std::wstring const& from, std::wstring const& to)       ->std::vector<Message>;
+
+	auto sendMessage(Message& message)                                       ->void;
+
+protected:
+	DataBase(std::wstring const&& path = L"./base/");
 
 public:
-	DataBase(std::string const&& path = "./Users/") :
-		_fin(nullptr), _fout(nullptr), _path(path) {};
-
-	DataBase(std::unique_ptr<std::ofstream>&& srcof,
-		std::unique_ptr<std::ifstream>&& srcif,
-		std::string const&& path = "./Users/") :
-		_fout(std::move(srcof)), _fin(std::move(srcif)), _path(path) {}
-
-
-	auto login(/*User const& userID*/std::string const& userID)         -> bool;
-
-	auto signUp(/*User const& userID*/std::string const& userID)        -> bool;
-
-	auto isExisting(std::string const& userID)                          -> bool;
-
-	auto deleteUser()                                                   -> void;
-
-	auto clearChat(std::string const& userID)                           -> void;
-
-	auto getMessages(std::string const& userID)                         -> void;//std::unique_ptr<Message>;
-
-	auto sendMessage(/*Message const& message,*/ std::string const& userID) -> void;
-
 
 	~DataBase() = default;
-
-
-
-
 };

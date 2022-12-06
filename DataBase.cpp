@@ -1,116 +1,189 @@
 #include "DataBase.h"
-#include <iostream>
-#include <chrono>
-#include<stdio.h>
+#include <io.h>
+#include <fcntl.h>
 
-#include <filesystem>
+using json = nlohmann::json;
 
-auto DataBase::login(/*User const& userID*/std::string const& userID)             -> bool
+DataBase::DataBase(std::wstring const&& path) :
+	_finout(), _path(path)
 {
-	_fout.reset(nullptr);
-	_fin.reset(nullptr);
+	std::filesystem::create_directories(_path);
+	std::filesystem::create_directories(_path + L"/Messages_List");
+	_finout.open(_path + L"./Messages_List/common_chat.json", std::ios::app);
+	_finout.close();
 
-	_fout = std::make_unique<std::ofstream>(userID.c_str(), std::ios_base::app);
-	_fin  = std::make_unique<std::ifstream>(userID.c_str(), std::ios_base::app);
-	std::string username, pass;
-	std::getline(*_fin, username, '\n');
-	std::getline(*_fin, pass, '\n');
-
-
-	std::string un, ps;
-	std::cin >> un >> ps;
-
-	if (!username.compare(un) && !pass.compare(ps))
-		return 1;
-	else return 0;
-
-	//sendMessage(userID);
-
-	//getMessages(userID);
-
-	return _fin->is_open();
+	_finout.open(_path + L"users.json", std::ios::app);
+	_finout.close();
 }
 
-
-auto DataBase::signUp(/*User const& userID*/std::string const& userID)            -> bool
+auto DataBase::to_json(User& user)                      -> void
 {
-	_fout.reset(nullptr);
-	_fin.reset(nullptr);
-
-	if (isExisting(userID))
-		return false;
-
-	createDir(userID);
-
-
-	*_fout << userID << '\n';
-	*_fout << "111222\n";
-
-
-
-	auto rez = _fout->is_open();
-
-	_fout->close();
-
-
-	return rez;
+	json js;
+	js["Login"]    = user.getLogin();
+	js["Password"] = user.getPass();
+	js["Username"] = user.getUsername();
+	_finout << js;
 }
 
-
-auto DataBase::isExisting(std::string const& userID)       -> bool
+auto DataBase::to_json(Message& mess)                   -> void
 {
-	std::fstream temp(userID.c_str());
-
-	bool rez = temp.is_open();
-
-	temp.close();
-
-	return rez;
+	json js;
+	js["Content"]  = mess.getContent();
+	js["Sender"]   = mess.getSender();
+	js["Time"]     = mess.getTime();
+	_finout << js;
 }
 
-
-
-auto DataBase::deleteUser()          -> void
+auto DataBase::from_json(User& user)                    -> void
 {
-	remove("ww.txt");
-}
-
-
-auto DataBase::sendMessage(/*Message const& message,*/ std::string const& userID) -> void
-{
-
+	json js;
+	_finout >> js;
 	
+	user.setLogin(js["Login"]);
+	user.setPass(js["Password"]);
+	user.setUsername(js["Username"]);
+}
 
+auto DataBase::from_json(Message& mess)                 -> void
+{
+	json js;
+	_finout >> js;
 
-	/*std::string to;
-	std::cin >> to;
+	mess.setSender(js["Sender"]);
+	mess.setContent(js["Content"]);
+	mess.setTime(js["Time"]);
+}
 
-	_fout = std::make_unique<std::ofstream>(_path + "/" + )
-	_fout->seekp(std::ios_base::end);*/
+auto DataBase::login(User& userID)                      -> bool
+{
+	std::wstring buff = userID.getPass();
 
-
+	if (!isExisting(userID) || userID.getPass().compare(buff))
+	{
+		_finout.close();
+		return false;
+	}
+	_finout.close();
+	return true;
 }
 
 
-auto DataBase::getMessages(std::string const& userID)                         ->  void
+auto DataBase::signUp(User& userID)                    -> bool
 {
-	_fout->seekp(std::ios_base::end);
-	_fin->seekg(std::ios_base::beg);
-
-	std::string str;
-
-	std::getline(*_fin, str);
-	for (int i = 0; i < str.size(); ++i)
+	if (isExisting(userID))
 	{
-		std::cout << str[i] << '\n';
+		return false;
 	}
 
+	_finout.clear();
+	_finout.setf(std::ios::out | std::ios::app);
+
+	to_json(userID);
+
+	_finout.close();
+
+	return true;
 }
 
 
-auto DataBase::createDir(std::string const& dirName) -> void
+auto DataBase::isExisting(User& userID)               -> bool
 {
-	std::filesystem::create_directories(_path + dirName);
-	std::filesystem::create_directories(_path + dirName + "/Messages_List");
-	_fout = std::make_unique<std::ofstream>(_path + dirName + "/" + dirName + ".txt", std::ios_base::app);
+	_finout.open(_path + L"users.json", std::ios::in | std::ios::app);
+	
+	_finout.get();
+
+	User buff;
+
+	while (_finout.good())
+	{
+		_finout.unget();
+
+		from_json(buff);
+		if (!buff.getUsername().compare(userID.getUsername()) || !buff.getLogin().compare(userID.getLogin()))
+		{
+			userID.setUsername(buff.getUsername());
+			userID.setPass(buff.getPass());
+			return true;
+		}
+		_finout.get();
+	}
+	return false;
+}
+
+
+auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)                               ->void
+{
+	std::wstring dialog;
+	user1 > user2 ?
+		dialog.assign(user1 + user2) :
+		dialog.assign(user2 + user1);
+	_finout.close();
+	_finout.open(_path + L"Messages_List/" + dialog + L".json", std::ios::out | std::ios::trunc );
+}
+
+ 
+
+
+auto DataBase::sendMessage(Message& message) -> void
+{
+	_finout.close();
+
+	if (!message.getReceiver().compare(L"common_chat"))
+	{
+		_finout.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::out);
+	}
+
+	else
+	{
+		std::wstring dialog;
+		message.getReceiver() > message.getSender() ?
+			dialog.assign(message.getReceiver() + message.getSender()) :
+			dialog.assign(message.getSender() + message.getReceiver());
+
+		_finout.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app);
+	}
+
+	to_json(message);
+
+	_finout.close();
+}
+
+
+auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)   ->  std::vector<Message>
+{
+	_finout.close();
+
+	if (!from.compare(L"common_chat"))
+	{
+		_finout.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::in);
+	}
+	else
+	{
+		_finout.close();
+		std::wstring dialog;
+		to > from ?
+			dialog.assign(to + from) :
+			dialog.assign(from + to);
+
+		_finout.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app | std::ios::in);
+	}
+
+	_finout.get();
+
+	std::vector<Message> messages;
+	messages.reserve(25);
+	Message buff;
+
+	while (_finout.good())
+	{
+		_finout.unget();
+
+		from_json(buff);
+		messages.push_back(buff);
+
+		_finout.get();
+	}
+	_finout.close();
+	return messages;
+
 }
