@@ -1,19 +1,39 @@
 #include "DataBase.h"
-#include <io.h>
-#include <fcntl.h>
 
 using json = nlohmann::json;
 
 DataBase::DataBase(std::wstring const&& path) :
-	_finout(), _path(path)
+	_path(path)
 {
 	std::filesystem::create_directories(_path);
 	std::filesystem::create_directories(_path + L"/Messages_List");
-	_finout.open(_path + L"./Messages_List/common_chat.json", std::ios::app);
-	_finout.close();
 
-	_finout.open(_path + L"users.json", std::ios::app);
-	_finout.close();
+	std::ofstream test(_path + L"users.json", std::ios::app);
+	test.close();
+
+	_messageStream.open(_path + L"./Messages_List/common_chat.json", std::ios::in | std::ios::out | std::ios::app);
+	_userStream.open(_path + L"users.json", std::ios::in | std::ios::out | std::ios::ate);
+
+	_messageStream.close();
+}
+
+auto DataBase::adjustment()                             -> void
+{
+	auto pos = _userStream.tellp();
+	_userStream.seekp(pos);           //טח פאיכא
+	int count = 0;
+	char ch = _userStream.get();
+	while (ch != '\n')
+	{
+		count++;
+		ch = _userStream.get();
+	}
+
+	_userStream.seekg(pos);          // ג פאיכ
+	for (int i = 0; i < count; ++i)
+	{
+		_userStream.put(' ');
+	}
 }
 
 auto DataBase::to_json(User& user)                      -> void
@@ -22,8 +42,9 @@ auto DataBase::to_json(User& user)                      -> void
 	js["Login"]    = user.getLogin();
 	js["Password"] = user.getPass();
 	js["Username"] = user.getUsername();
-	_finout << js;
+	_userStream << js;
 }
+
 
 auto DataBase::to_json(Message& mess)                   -> void
 {
@@ -31,13 +52,13 @@ auto DataBase::to_json(Message& mess)                   -> void
 	js["Content"]  = mess.getContent();
 	js["Sender"]   = mess.getSender();
 	js["Time"]     = mess.getTime();
-	_finout << js;
+	_messageStream << js;
 }
 
 auto DataBase::from_json(User& user)                    -> void
 {
 	json js;
-	_finout >> js;
+	_userStream >> js;
 	
 	user.setLogin(js["Login"]);
 	user.setPass(js["Password"]);
@@ -47,7 +68,7 @@ auto DataBase::from_json(User& user)                    -> void
 auto DataBase::from_json(Message& mess)                 -> void
 {
 	json js;
-	_finout >> js;
+	_messageStream >> js;
 
 	mess.setSender(js["Sender"]);
 	mess.setContent(js["Content"]);
@@ -60,10 +81,8 @@ auto DataBase::login(User& userID)                      -> bool
 
 	if (!isExisting(userID) || userID.getPass().compare(buff))
 	{
-		_finout.close();
 		return false;
 	}
-	_finout.close();
 	return true;
 }
 
@@ -75,12 +94,13 @@ auto DataBase::signUp(User& userID)                    -> bool
 		return false;
 	}
 
-	_finout.clear();
-	_finout.setf(std::ios::out | std::ios::app);
+	_userStream.seekp(0, std::ios::end);
+
+	_userStream << std::setw(219) << '\n';
+
+	_userStream.seekp(-220, std::ios::cur);
 
 	to_json(userID);
-
-	_finout.close();
 
 	return true;
 }
@@ -88,28 +108,44 @@ auto DataBase::signUp(User& userID)                    -> bool
 
 auto DataBase::isExisting(User& userID)               -> bool
 {
-	_finout.open(_path + L"users.json", std::ios::in | std::ios::app);
+	_userStream.seekg(0, std::ios::beg);
+	_userStream.seekp(0, std::ios::beg);
 	
-	_finout.get();
+	_userStream.get();
+
+	User temp(userID);
+	temp.getUsername().erase(std::remove(temp.getUsername().begin(), temp.getUsername().end(), wchar_t(160)), temp.getUsername().end());
+	temp.getLogin().erase(std::remove(temp.getLogin().begin(), temp.getLogin().end(), wchar_t(160)), temp.getLogin().end());
+	temp.getPass().erase(std::remove(temp.getPass().begin(), temp.getPass().end(), wchar_t(160)), temp.getPass().end());
 
 	User buff;
-
-	while (_finout.good())
+	while (_userStream.good())
 	{
-		_finout.unget();
+		_userStream.unget();
+
+		_currentUserPos = _userStream.tellp();
 
 		from_json(buff);
-		if (!buff.getUsername().compare(userID.getUsername()) || !buff.getLogin().compare(userID.getLogin()))
+
+		buff.getUsername().erase(std::remove(buff.getUsername().begin(), buff.getUsername().end(), wchar_t(160)), buff.getUsername().end());
+		buff.getLogin().erase(std::remove(buff.getLogin().begin(), buff.getLogin().end(), wchar_t(160)), buff.getLogin().end());
+
+		if (!buff.getUsername().compare(temp.getUsername()) || !buff.getLogin().compare(temp.getLogin()))
 		{
+			buff.getPass().erase(std::remove(buff.getPass().begin(), buff.getPass().end(), wchar_t(160)), buff.getPass().end());
 			userID.setUsername(buff.getUsername());
 			userID.setPass(buff.getPass());
 			return true;
 		}
-		_finout.get();
+
+		while (_userStream.get() != '\n');
+		_userStream.get();
 	}
+
+	_userStream.clear();
+
 	return false;
 }
-
 
 auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)                               ->void
 {
@@ -117,20 +153,35 @@ auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)  
 	user1 > user2 ?
 		dialog.assign(user1 + user2) :
 		dialog.assign(user2 + user1);
-	_finout.close();
-	_finout.open(_path + L"Messages_List/" + dialog + L".json", std::ios::out | std::ios::trunc );
+
+	_messageStream.open(_path + L"Messages_List/" + dialog + L".json", std::ios::out | std::ios::trunc);
+	_messageStream.close();
 }
 
- 
 
+auto DataBase::change_password(User& newData)                                       ->void
+{
+	_userStream.seekp(_currentUserPos);
+
+	to_json(newData);
+	adjustment();
+}
+
+auto DataBase::change_login(User& newData)       ->void
+{
+	_userStream.seekp(_currentUserPos);
+
+	to_json(newData);
+
+	adjustment();
+
+}
 
 auto DataBase::sendMessage(Message& message) -> void
 {
-	_finout.close();
-
 	if (!message.getReceiver().compare(L"common_chat"))
 	{
-		_finout.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::out);
+		_messageStream.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::out);
 	}
 
 	else
@@ -140,50 +191,49 @@ auto DataBase::sendMessage(Message& message) -> void
 			dialog.assign(message.getReceiver() + message.getSender()) :
 			dialog.assign(message.getSender() + message.getReceiver());
 
-		_finout.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app);
+		_messageStream.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app | std::ios::out);
 	}
 
 	to_json(message);
 
-	_finout.close();
+	_messageStream.close();
 }
 
 
 auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)   ->  std::vector<Message>
 {
-	_finout.close();
 
 	if (!from.compare(L"common_chat"))
 	{
-		_finout.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::in);
+		_messageStream.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::in);
 	}
 	else
 	{
-		_finout.close();
 		std::wstring dialog;
 		to > from ?
 			dialog.assign(to + from) :
 			dialog.assign(from + to);
 
-		_finout.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app | std::ios::in);
+		_messageStream.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app | std::ios::in);
 	}
 
-	_finout.get();
+	_messageStream.get();
 
 	std::vector<Message> messages;
 	messages.reserve(25);
 	Message buff;
 
-	while (_finout.good())
+	while (_messageStream.good())
 	{
-		_finout.unget();
+		_messageStream.unget();
 
 		from_json(buff);
 		messages.push_back(buff);
 
-		_finout.get();
+		_messageStream.get();
 	}
-	_finout.close();
+
+	_messageStream.close();
 	return messages;
 
 }

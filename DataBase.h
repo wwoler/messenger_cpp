@@ -15,8 +15,11 @@ class DataBase : public Singleton<DataBase>
 private:
 	friend class Chat;
 
-	std::fstream                    _finout;
+	std::fstream                    _userStream;
+	std::fstream                    _messageStream;
 	std::wstring                    _path;
+	std::streampos                  _currentUserPos;
+
 	auto to_json(User& user)        ->void;
 	auto to_json(Message& mess)     ->void;
 	auto from_json(User& user)      ->void;
@@ -30,9 +33,17 @@ private:
 
 	auto clearChat(std::wstring const& user1, std::wstring const& user2)     ->void;
 
+	auto change_password(User& newData)                                      ->void;
+
+	auto change_login(User& newData)                                         ->void;
+
 	auto getMessages(std::wstring const& from, std::wstring const& to)       ->std::vector<Message>;
 
 	auto sendMessage(Message& message)                                       ->void;
+
+	auto adjustment()                                                        ->void;
+
+
 
 protected:
 	DataBase(std::wstring const&& path = L"./base/");

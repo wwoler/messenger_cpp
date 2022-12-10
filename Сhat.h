@@ -9,6 +9,8 @@
 #include <iomanip>
 
 
+class CloseChat{};
+
 
 class Chat : public Singleton<Chat>
 {
@@ -17,8 +19,6 @@ private:
 	std::unique_ptr<User> _currentUser;
 	void (Chat::*         _state)();
 	bool                  _bUserStatus;
-	bool                  _bChatStatus;
-
 
 	auto chatMenu() const                                          ->void;
 	auto userMenu() const                                          ->void;
@@ -38,6 +38,8 @@ private:
 
 	auto clear_chat()                                              ->void;
 	auto get_info()                                                ->void;
+	auto change_password()                                         ->void;
+	auto change_login()                                            ->void;
 	
 	auto set_user_data(std::wstring& data, std::wregex const& reg) ->bool;
 	auto set_current_user(std::unique_ptr<User> user)              ->void;
@@ -45,12 +47,7 @@ private:
 	auto logout()                                                  ->void;
 	auto exit()                                                    ->void;
 	auto time_to_string(time_t& time)                              ->std::wstring;
-protected:
-
-	Chat() :
-		_DB(nullptr), _currentUser(), _state(nullptr),
-		_bChatStatus(false), _bUserStatus(false)
-	{}
+	auto flush_input_buffer()                                      ->void;
 
 public:
 	auto set_data_base(DataBase* db)                               ->void
@@ -59,5 +56,11 @@ public:
 	}
 
 	auto run()    -> void;
+
+protected:
+	Chat() :
+		_DB(nullptr), _currentUser(), _state(nullptr),
+		_bUserStatus(false)
+	{}
 
 };

@@ -3,20 +3,32 @@
 
 extern HANDLE h;
 
+auto Chat::flush_input_buffer()                                      ->void
+{
+	auto max_ = std::numeric_limits<std::streamsize>::max;
+	std::wcin.ignore(max_(), '\n');
+}
+
 auto Chat::set_user_data(std::wstring& data, std::wregex const& reg)  -> bool
 {
 	bool rez;
-	std::getline(std::wcin, data);
-	while (!std::regex_match(data, reg))
+	std::wstring buff;
+	std::getline(std::wcin, buff);
+	while (!std::regex_match(buff, reg))
 	{
 		SetConsoleTextAttribute(h, 4);
 		std::wcout << L"Incorrect input, try again(quit to quit)\n> ";
 		SetConsoleTextAttribute(h, 11);
-		std::getline(std::wcin, data);
+		std::getline(std::wcin, buff);
 	}
 
-	(data.compare(L"quit")) ? rez = 1 : rez = 0;
-	return rez;
+	if(!(buff.compare(L"quit")))
+		return false;
+
+	for (int i = 0; i < buff.size(); ++i)
+		data[i] = buff[i];
+
+	return true;
 }
 
 
@@ -29,9 +41,8 @@ auto Chat::set_current_user(std::unique_ptr<User> user)            -> void
 
 auto Chat::time_to_string(time_t& time)                            -> std::wstring 
 {
-	std::time_t t = time;
 	std::tm time_point;
-	localtime_s(&time_point, &t);
+	localtime_s(&time_point, &time);
 
 	std::wstring year = std::to_wstring(time_point.tm_year + 1900);
 	std::wstring month = std::to_wstring(time_point.tm_mon + 1);
@@ -63,14 +74,17 @@ auto Chat::time_to_string(time_t& time)                            -> std::wstri
 
 auto Chat::login()  -> void
 {
-	auto max_ = std::numeric_limits<std::streamsize>::max;
-	std::wcin.ignore(max_(), '\n');
+	flush_input_buffer();
 
 	std::unique_ptr<User> user = std::make_unique<User>();
+
 	std::wcout << L"Enter login\n> ";
 	std::getline(std::wcin, user->getLogin());
+
 	std::wcout << L"Enter password\n> ";
 	std::getline(std::wcin, user->getPass());
+
+
 	system("cls");
 	if (_DB->login(*user))
 	{
@@ -89,11 +103,10 @@ auto Chat::login()  -> void
 
 auto Chat::signUp() -> void
 {
-	auto max_ = std::numeric_limits<std::streamsize>::max;
-	std::wcin.ignore(max_(), '\n');
+	flush_input_buffer();
 
 	std::wregex regular(L"([\\w]{4,15})");
-	std::wstring login, password, username;
+	std::wstring login(15, wchar_t(160)), password(15, wchar_t(160)), username(15, wchar_t(160));
 	
 	std::wcout << L"Enter login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
 	if (!set_user_data(login, regular))
@@ -136,8 +149,7 @@ auto Chat::signUp() -> void
 
 auto Chat::getMessages() -> void
 {
-	auto max_ = std::numeric_limits<std::streamsize>::max;
-	std::wcin.ignore(max_(), '\n');
+	flush_input_buffer();
 
 	std::wstring chat_with;
 	std::wcout << L"Choose user/chat to get messages:\n> ";
@@ -152,7 +164,7 @@ auto Chat::getMessages() -> void
 	}
 	system("cls");
 	
-
+	system("cls");
 	auto messages = _DB->getMessages(chat_with, _currentUser->getUsername());
 
 	if (messages.empty())
@@ -173,8 +185,8 @@ auto Chat::getMessages() -> void
 	for (int i = 0; i < messages.size(); ++i)
 	{
 		SetConsoleCursorPosition(h, c);
-		std::wcout << messages[i].getSender()
-			<< ' ' << time_to_string(messages[i].getTime());
+		std::wcout << messages[i].getSender() 
+			<< L' ' << time_to_string(messages[i].getTime());
 		c.Y += 1;
 		SetConsoleCursorPosition(h, c);
 		std::wcout << messages[i].getContent();
@@ -188,8 +200,7 @@ auto Chat::getMessages() -> void
 
 auto Chat::sendMessage() -> void
 {
-	auto max_ = std::numeric_limits<std::streamsize>::max;
-	std::wcin.ignore(max_(), '\n');
+	flush_input_buffer();
 
 	std::wstring receiver, content;
 	std::wcout << L"Choose user/chat to send message:\n> ";
@@ -204,7 +215,7 @@ auto Chat::sendMessage() -> void
 	}
 
 	system("cls");
-	std::wcout << L"Write message to " << receiver << L"{max symbols 129}\n> ";
+	std::wcout << L"Write message to " << receiver << L"{max symbols: 129}\n> ";
 	std::getline(std::wcin, content);
 	if (content.size() > 129)
 	{
@@ -229,13 +240,14 @@ auto Chat::logout()                                                -> void
 
 auto Chat::exit()                                                  -> void
 {
-	_bChatStatus = false;
+	throw CloseChat{};
 }
+
 
 auto Chat::clear_chat()                                            ->void
 {
-	auto max_ = std::numeric_limits<std::streamsize>::max;
-	std::wcin.ignore(max_(), '\n');
+	flush_input_buffer();
+
 	std::wstring username;
 	std::wcout << "Enter username to clear chat with him:\n> ";
 	std::getline(std::wcin, username);
@@ -262,15 +274,129 @@ auto Chat::clear_chat()                                            ->void
 			break;
 		case'n':
 		case'N':
-			done = true;
+			std::wcout << std::endl;
+			return;                                                      //ФИКС
 			break;
 ;		default:
 	        std::wcout << "Are you sure? Y/N\n> ";
 			break;
 		}
 	}
+	system("cls");
+	SetConsoleTextAttribute(h, 10);
+	std::wcout << "Chat has been cleared" << std::endl;
 	std::wcout << std::endl;
 }
+
+
+auto Chat::change_password()                                         ->void
+{
+	flush_input_buffer();
+
+	std::wregex regular(L"([\\w]{4,15})");
+	std::wstring buffPassword(15, wchar_t(160));
+
+	std::wcout << L"Enter new password | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
+	if (!set_user_data(buffPassword, regular))
+	{
+		system("cls");
+		SetConsoleTextAttribute(h, 4);
+		std::wcout << L"Changing login has been denied\n\n";
+		return;
+	}
+
+	std::wstring buffLogin, buffUsername;
+
+	buffLogin = _currentUser->getLogin();
+	buffUsername = _currentUser->getUsername();
+
+	for (size_t i = _currentUser->getLogin().size(); i < 15; ++i)
+	{
+		buffUsername.push_back(wchar_t(160));
+	}
+
+	for (size_t i = _currentUser->getUsername().size(); i < 15; ++i)
+	{
+		buffLogin.push_back(wchar_t(160));
+	}
+
+	User buff(buffLogin, buffPassword, buffUsername);
+	
+	_DB->change_password(buff);
+
+	buffPassword.erase(std::remove(buffPassword.begin(), buffPassword.end(), wchar_t(160)), buffPassword.end());
+	_currentUser->setPass(buffPassword);
+
+	system("cls");
+	SetConsoleTextAttribute(h, 10);
+	std::wcout << "Password has been changed" << std::endl;
+	std::wcout << std::endl;
+
+}
+
+auto Chat::change_login()                                            ->void
+{
+	flush_input_buffer();
+
+	std::wregex regular(L"([\\w]{4,15})");
+	std::wstring buffLogin(15, wchar_t(160));
+
+	std::wcout << L"Enter new login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
+	if (!set_user_data(buffLogin, regular))
+	{
+		system("cls");
+		SetConsoleTextAttribute(h, 4);
+		std::wcout << L"Changing password has been denied\n\n";
+		return;
+	}
+
+	std::wstring tempLogin = buffLogin;
+	tempLogin.erase(std::remove(tempLogin.begin(), tempLogin.end(), wchar_t(160)), tempLogin.end());
+
+	std::wstring buffPassword, buffUsername;
+
+	buffPassword = _currentUser->getPass();
+	buffUsername = _currentUser->getUsername();
+
+	User temp(tempLogin, buffPassword);
+
+	auto buffCurrentPos = _DB->_currentUserPos;
+
+	if (_DB->isExisting(temp))
+	{
+		system("cls");
+		SetConsoleTextAttribute(h, 4);
+		std::wcout << "Account with this login has already exited\n\n";
+		return;
+	}
+
+	_DB->_currentUserPos = buffCurrentPos;
+	temp.setUsername(buffUsername);
+
+	for (size_t i = _currentUser->getPass().size(); i < 15u; ++i)
+	{
+		buffPassword.push_back(wchar_t(160));
+	}
+
+	for (size_t i = _currentUser->getUsername().size(); i < 15u; ++i)
+	{
+		buffUsername.push_back(wchar_t(160));
+	}
+
+	temp.setLogin(buffLogin);
+	temp.setUsername(buffUsername);
+	temp.setPass(buffPassword);
+
+	_DB->change_login(temp);
+
+	_currentUser->setLogin(tempLogin);
+
+	system("cls");
+	SetConsoleTextAttribute(h, 10);
+	std::wcout << "Login has been changed" << std::endl;
+	std::wcout << std::endl;
+}
+
 
 auto Chat::get_info()                                              -> void
 {
@@ -304,7 +430,7 @@ auto Chat::chatBox(std::wstring const& username, int const& count) const        
 	std::wcout << L'├' << std::setfill(L'─') << std::setw(130) << L'┤' << std::endl;
 	std::wcout << std::left;
 
-	for (int i = 0u; i < count; ++i)
+	for (size_t i = 0u; i < count; ++i)
 		std::wcout << L'│' << std::setfill(L' ') << std::right << std::setw(130) << L'│' << std::endl;
 
 	std::wcout << L'└' << std::setfill(L'─') << std::setw(130) << L'┘' << std::endl;
@@ -323,7 +449,7 @@ auto Chat::chatMenu() const   -> void
 	};
 
 	std::wcout << L'┌' << std::setfill(L'─') << std::setw(27) << L'┐' << std::endl;
-	for (int i = 0, j = 0; i < 5; ++i)
+	for (size_t i = 0, j = 0; i < 5; ++i)
 	{
 		if (i % 2 == 0)
 		{
@@ -349,11 +475,13 @@ auto Chat::userMenu() const   -> void
 		{L"Get messages"},
 		{L"Get info about account"},
 		{L"Clear chat"},
+		{L"Change password"},
+		{L"Change login"},
 		{L"Logout"}
 	};
 
 	std::wcout << L'┌' << std::setfill(L'─') << std::setw(27) << L'┐' << std::endl;
-	for (int i = 0, j = 0; i < 9; ++i)
+	for (size_t i = 0, j = 0; i < 13; ++i)
 	{
 		if (i % 2 == 0)
 		{
@@ -381,8 +509,7 @@ auto Chat::action_for_chat()                                      -> void
 		SetConsoleTextAttribute(h, 4);
 		std::wcin.clear();
 		std::wcout << L"Bad input, try again\n> ";
-		auto max_ = std::numeric_limits<std::streamsize>::max;
-		std::wcin.ignore(max_(), '\n');
+		flush_input_buffer();
 		SetConsoleTextAttribute(h, 11);
 	}
 
@@ -392,19 +519,19 @@ auto Chat::action_for_chat()                                      -> void
 
 auto Chat::action_for_user()                                -> void
 {
-	void (Chat::*fact[])() = {
-		&Chat::sendMessage, &Chat::getMessages,
-		&Chat::get_info, &Chat::clear_chat,
-		&Chat::logout, 
+	void (Chat:: * fact[])() = {
+		&Chat::sendMessage,     &Chat::getMessages,
+		&Chat::get_info,        &Chat::clear_chat,
+		&Chat::change_password, &Chat::change_login,
+	    &Chat::logout
 	};
 	int act;
-	while (!(std::wcin >> act) || act < 1 || act > 5)
+	while (!(std::wcin >> act) || act < 1 || act > 7)
 	{
 		SetConsoleTextAttribute(h, 4);
 		std::wcin.clear();
 		std::wcout << L"Bad input, try again\n> ";
-		auto max_ = std::numeric_limits<std::streamsize>::max;
-		std::wcin.ignore(max_(), '\n');
+		flush_input_buffer();
 		SetConsoleTextAttribute(h, 11);
 	}
 
@@ -426,13 +553,20 @@ auto Chat::userLoop()  -> void
 
 auto Chat::chatLoop() -> void
 {
-	_bChatStatus = true;
-	while (_bChatStatus)
+	try
 	{
-		chatMenu();
-		action_for_chat();
+		while (true)
+		{
+			chatMenu();
+			action_for_chat();
+			system("cls");
+			(this->*_state)();
+		}
+	}
+	catch (CloseChat const& done)
+	{
 		system("cls");
-		(this->*_state)();
+		std::wcout << "Chat closing.....\n\n";
 	}
 
 }
