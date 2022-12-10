@@ -18,6 +18,7 @@ auto init_and_start()  -> void
 	auto& data_base = DataBase::get_instance();
 	auto& chat = Chat::get_instance();
 	chat.set_data_base(&data_base);
+
 	try
 	{
 		chat.run();

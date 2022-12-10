@@ -18,8 +18,7 @@ auto User::getUsername()	                                ->std::wstring& {
 
 auto User::setLogin(std::wstring const& login)              ->void
 {
-	//_login.assign(login);
-	_login = login;
+	_login.assign(login);
 }
 auto User::setPass(std::wstring const& pass)                ->void
 {

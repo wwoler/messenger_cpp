@@ -17,7 +17,7 @@ DataBase::DataBase(std::wstring const&& path) :
 	_messageStream.close();
 }
 
-auto DataBase::adjustment()                             -> void
+auto DataBase::adjustment()  ->void
 {
 	auto pos = _userStream.tellp();
 	_userStream.seekp(pos);           //טח פאיכא
@@ -36,7 +36,7 @@ auto DataBase::adjustment()                             -> void
 	}
 }
 
-auto DataBase::to_json(User& user)                      -> void
+auto DataBase::to_json(User& user)  ->void
 {
 	json js;
 	js["Login"]    = user.getLogin();
@@ -46,7 +46,7 @@ auto DataBase::to_json(User& user)                      -> void
 }
 
 
-auto DataBase::to_json(Message& mess)                   -> void
+auto DataBase::to_json(Message& mess)  ->void
 {
 	json js;
 	js["Content"]  = mess.getContent();
@@ -55,7 +55,7 @@ auto DataBase::to_json(Message& mess)                   -> void
 	_messageStream << js;
 }
 
-auto DataBase::from_json(User& user)                    -> void
+auto DataBase::from_json(User& user)  ->void
 {
 	json js;
 	_userStream >> js;
@@ -65,7 +65,7 @@ auto DataBase::from_json(User& user)                    -> void
 	user.setUsername(js["Username"]);
 }
 
-auto DataBase::from_json(Message& mess)                 -> void
+auto DataBase::from_json(Message& mess)  ->void
 {
 	json js;
 	_messageStream >> js;
@@ -75,7 +75,7 @@ auto DataBase::from_json(Message& mess)                 -> void
 	mess.setTime(js["Time"]);
 }
 
-auto DataBase::login(User& userID)                      -> bool
+auto DataBase::login(User& userID)  ->bool
 {
 	std::wstring buff = userID.getPass();
 
@@ -87,14 +87,14 @@ auto DataBase::login(User& userID)                      -> bool
 }
 
 
-auto DataBase::signUp(User& userID)                    -> bool
+auto DataBase::signUp(User& userID)  ->bool
 {
 	if (isExisting(userID))
 	{
 		return false;
 	}
 
-	_userStream.seekp(0, std::ios::end);
+	_userStream.seekp(0u, std::ios::end);
 
 	_userStream << std::setw(219) << '\n';
 
@@ -106,10 +106,10 @@ auto DataBase::signUp(User& userID)                    -> bool
 }
 
 
-auto DataBase::isExisting(User& userID)               -> bool
+auto DataBase::isExisting(User& userID)  ->bool
 {
-	_userStream.seekg(0, std::ios::beg);
-	_userStream.seekp(0, std::ios::beg);
+	_userStream.seekg(0u, std::ios::beg);
+	_userStream.seekp(0u, std::ios::beg);
 	
 	_userStream.get();
 
@@ -147,7 +147,7 @@ auto DataBase::isExisting(User& userID)               -> bool
 	return false;
 }
 
-auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)                               ->void
+auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)  ->void
 {
 	std::wstring dialog;
 	user1 > user2 ?
@@ -159,7 +159,7 @@ auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)  
 }
 
 
-auto DataBase::change_password(User& newData)                                       ->void
+auto DataBase::change_password(User& newData)  ->void
 {
 	_userStream.seekp(_currentUserPos);
 
@@ -167,7 +167,7 @@ auto DataBase::change_password(User& newData)                                   
 	adjustment();
 }
 
-auto DataBase::change_login(User& newData)       ->void
+auto DataBase::change_login(User& newData)  ->void
 {
 	_userStream.seekp(_currentUserPos);
 
@@ -177,7 +177,7 @@ auto DataBase::change_login(User& newData)       ->void
 
 }
 
-auto DataBase::sendMessage(Message& message) -> void
+auto DataBase::sendMessage(Message& message)  ->void
 {
 	if (!message.getReceiver().compare(L"common_chat"))
 	{
@@ -200,7 +200,7 @@ auto DataBase::sendMessage(Message& message) -> void
 }
 
 
-auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)   ->  std::vector<Message>
+auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)  ->std::vector<Message>
 {
 
 	if (!from.compare(L"common_chat"))
