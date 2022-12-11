@@ -365,15 +365,13 @@ auto Chat::changeLogin()  ->void
 		return;
 	}
 
-	std::wstring tempLogin = buffLogin;
-	tempLogin.erase(std::remove(tempLogin.begin(), tempLogin.end(), wchar_t(160)), tempLogin.end());
 
 	std::wstring buffPassword, buffUsername;
 
 	buffPassword = _currentUser->getPass();
 	buffUsername = _currentUser->getUsername();
 
-	User temp(tempLogin, buffPassword);
+	User temp(buffLogin, buffPassword);
 
 	auto buffCurrentPos = _DB->_currentUserPos;
 
@@ -404,7 +402,7 @@ auto Chat::changeLogin()  ->void
 
 	_DB->changeLogin(temp);
 
-	_currentUser->setLogin(tempLogin);
+	_currentUser->setLogin(buffLogin);
 
 	system("cls");
 	SetConsoleTextAttribute(h, 10u);
