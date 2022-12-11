@@ -96,6 +96,7 @@ auto DataBase::signUp(User& userID)  ->bool
 
 	_userStream.seekp(0u, std::ios::end);
 
+	//219 - максимальный размер для класса в файле 
 	_userStream << std::setw(219) << '\n';
 
 	_userStream.seekp(-220, std::ios::cur);
@@ -114,6 +115,7 @@ auto DataBase::isExisting(User& userID)  ->bool
 	_userStream.get();
 
 	User temp(userID);
+	//очистка входного  объекта от "пустых символов" для последующего сравнения
 	temp.getUsername().erase(std::remove(temp.getUsername().begin(), temp.getUsername().end(), wchar_t(160u)), temp.getUsername().end());
 	temp.getLogin().erase(std::remove(temp.getLogin().begin(), temp.getLogin().end(), wchar_t(160u)), temp.getLogin().end());
 	temp.getPass().erase(std::remove(temp.getPass().begin(), temp.getPass().end(), wchar_t(160u)), temp.getPass().end());
@@ -164,6 +166,7 @@ auto DataBase::changePassword(User& newData)  ->void
 	_userStream.seekp(_currentUserPos);
 
 	to_json(newData);
+
 	adjustment();
 }
 
@@ -174,7 +177,6 @@ auto DataBase::changeLogin(User& newData)  ->void
 	to_json(newData);
 
 	adjustment();
-
 }
 
 auto DataBase::sendMessage(Message& message)  ->void
@@ -220,7 +222,7 @@ auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)  ->
 	_messageStream.get();
 
 	std::vector<Message> messages;
-	messages.reserve(25);
+	messages.reserve(20);
 	Message buff;
 
 	while (_messageStream.good())

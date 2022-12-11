@@ -28,6 +28,7 @@ auto Chat::set_user_data(std::wstring& data, std::wregex const& reg)  ->bool
 	for (int i = 0; i < buff.size(); ++i)
 		data[i] = buff[i];
 
+
 	return true;
 }
 
@@ -104,8 +105,10 @@ auto Chat::signUp()  ->void
 {
 	flush_input_buffer();
 
-	std::wregex regular(L"([\\w]{4,15})");
-	std::wstring login(15u, wchar_t(160u)), password(15u, wchar_t(160u)), username(15u, wchar_t(160u));
+	std::wregex regular(L"([A-Za-z0-9_]{4,15})");
+	std::wstring login(15u, wchar_t(160u)), password(15u, wchar_t(160u)), username(15u, wchar_t(160u)); 
+	/*добавление "пустых символов" для того чтобы при записи в файл для структуры выделялось максимальное
+	кол-во места, это нужно для того при изменении логина или пароля одна структура не заехала на другую и не стерла ее */
 	
 	std::wcout << L"Enter login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
 	if (!set_user_data(login, regular))
@@ -174,6 +177,7 @@ auto Chat::getMessages()  ->void
 		return;
 	}
 
+	//Для разметки консоли
 	COORD c;
 	c.X = 1;
 	c.Y = 3;
@@ -304,7 +308,7 @@ auto Chat::changePassword()  ->void
 {
 	flush_input_buffer();
 
-	std::wregex regular(L"([\\w]{4,15})");
+	std::wregex regular(L"([A-Za-z0-9_]{4,15})");
 	std::wstring buffPassword(15u, wchar_t(160u));
 
 	std::wcout << L"Enter new password | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
@@ -349,7 +353,7 @@ auto Chat::changeLogin()  ->void
 {
 	flush_input_buffer();
 
-	std::wregex regular(L"([\\w]{4,15})");
+	std::wregex regular(L"([A-Za-z0-9_]{4,15})");
 	std::wstring buffLogin(15u, wchar_t(160u));
 
 	std::wcout << L"Enter new login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
@@ -577,7 +581,7 @@ auto Chat::chatLoop()  ->void
 	catch (CloseChat const& done)
 	{
 		system("cls");
-		std::wcout << "Chat closing.....\n\n";
+		std::wcerr << "Chat closing.....\n\n";
 	}
 
 }
