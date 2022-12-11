@@ -4,15 +4,18 @@
 User::User(std::wstring const& login, std::wstring const& pass) :
 	_login(login), _pass(pass) {}
 
-auto User::getLogin()	                                    -> std::wstring& {
+auto User::getLogin()	                                    -> std::wstring&
+{
 	return _login;
 }
 
-auto User::getPass() 	                                    ->std::wstring& {
+auto User::getPass() 	                                    ->std::wstring&
+{
 	return _pass;
 }
  
-auto User::getUsername()	                                ->std::wstring& {
+auto User::getUsername()	                                ->std::wstring&
+{
 	return _username;
 }
 
