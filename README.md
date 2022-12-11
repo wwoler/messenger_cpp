@@ -195,8 +195,8 @@ Cодержит информацию об отправленном сообще�
 
 # 4)Как были распределены задачи в команде
 
-wwoler: DataBase.h, Chat.h, Singleton.h
+wwoler: DataBase, Chat, Singleton
 
-GhostRJY: Message.h, User.h
+GhostRJY: Message, User
 
 
