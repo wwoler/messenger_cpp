@@ -33,9 +33,9 @@ private:
 
 	auto clearChat(std::wstring const& user1, std::wstring const& user2)     ->void;
 
-	auto change_password(User& newData)                                      ->void;
-
-	auto change_login(User& newData)                                         ->void;
+	auto changePassword(User& newData)                                       ->void;
+	 
+	auto changeLogin(User& newData)                                          ->void;
 
 	auto getMessages(std::wstring const& from, std::wstring const& to)       ->std::vector<Message>;
 
@@ -50,5 +50,8 @@ protected:
 
 public:
 
-	~DataBase() = default;
+	~DataBase()
+	{
+		_userStream.close();
+	}
 };

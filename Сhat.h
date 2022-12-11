@@ -38,16 +38,16 @@ private:
 
 	auto clear_chat()                                              ->void;
 	auto get_info()                                                ->void;
-	auto change_password()                                         ->void;
-	auto change_login()                                            ->void;
+	auto changePassword()                                          ->void;
+	auto changeLogin()                                             ->void;
 	
 	auto set_user_data(std::wstring& data, std::wregex const& reg) ->bool;
 	auto set_current_user(std::unique_ptr<User> user)              ->void;
 
 	auto logout()                                                  ->void;
 	auto exit()                                                    ->void;
-	auto time_to_string(time_t& time)                              ->std::wstring;
 	auto flush_input_buffer()                                      ->void;
+	auto time_to_string(time_t& time)->std::wstring;
 
 public:
 	auto set_data_base(DataBase* db)                               ->void
@@ -55,12 +55,8 @@ public:
 		_DB = db;
 	}
 
-	auto run()    -> void;
+	auto run()                                                     ->void;
 
 protected:
-	Chat() :
-		_DB(nullptr), _currentUser(), _state(nullptr),
-		_bUserStatus(false)
-	{}
-
+	Chat() = default;
 };

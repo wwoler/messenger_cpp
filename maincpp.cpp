@@ -39,7 +39,6 @@ auto init_and_start()  -> void
 
 auto main() -> int
 {
-	
 	init_and_start();
 	system("pause");
 	return EXIT_SUCCESS;

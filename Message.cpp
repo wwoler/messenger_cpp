@@ -24,12 +24,12 @@ auto Message::getContent()->std::wstring&
 	return _content;
 }
 
-auto Message::getTime()   -> time_t&
+auto Message::getTime()->time_t&
 {
 	return _time;
 }
 
-auto Message::setSender(std::wstring const& sender)-> void
+auto Message::setSender(std::wstring const& sender)->void
 {
 	_sender.assign(sender);
 }

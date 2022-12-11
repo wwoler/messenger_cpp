@@ -22,7 +22,7 @@ auto Chat::set_user_data(std::wstring& data, std::wregex const& reg)  ->bool
 		std::getline(std::wcin, buff);
 	}
 
-	if(!(buff.compare(L"quit")))
+	if(!(buff.compare(L"quit")) || !buff.compare(L"common_chat"))
 		return false;
 
 	for (int i = 0; i < buff.size(); ++i)
@@ -91,7 +91,6 @@ auto Chat::login()  ->void
 		SetConsoleTextAttribute(h, 10u);
 		std::wcout << L"Login success\n\n";
 		set_current_user(std::move(user));
-		extern HANDLE h;
 		SetConsoleTextAttribute(h, 9u);
 		userLoop();
 		return;
@@ -106,7 +105,7 @@ auto Chat::signUp()  ->void
 	flush_input_buffer();
 
 	std::wregex regular(L"([\\w]{4,15})");
-	std::wstring login(15, wchar_t(160u)), password(15u, wchar_t(160u)), username(15u, wchar_t(160u));
+	std::wstring login(15u, wchar_t(160u)), password(15u, wchar_t(160u)), username(15u, wchar_t(160u));
 	
 	std::wcout << L"Enter login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
 	if (!set_user_data(login, regular))
@@ -133,6 +132,8 @@ auto Chat::signUp()  ->void
 		std::wcout << L"Registration has been denied\n\n";
 		return;
 	}
+
+
 
 	system("cls");
 	std::unique_ptr<User> user = std::make_unique<User>(login, password, username);
@@ -164,7 +165,6 @@ auto Chat::getMessages()  ->void
 	}
 	system("cls");
 	
-	system("cls");
 	auto messages = _DB->getMessages(chat_with, _currentUser->getUsername());
 
 	if (messages.empty())
@@ -236,6 +236,7 @@ auto Chat::sendMessage()  ->void
 auto Chat::logout()  ->void
 {
 	_bUserStatus = false;
+	_currentUser.reset(nullptr);
 }
 
 auto Chat::exit()  ->void
@@ -299,7 +300,7 @@ auto Chat::clear_chat()  ->void
 }
 
 
-auto Chat::change_password()  ->void
+auto Chat::changePassword()  ->void
 {
 	flush_input_buffer();
 
@@ -332,7 +333,7 @@ auto Chat::change_password()  ->void
 
 	User buff(buffLogin, buffPassword, buffUsername);
 	
-	_DB->change_password(buff);
+	_DB->changePassword(buff);
 
 	buffPassword.erase(std::remove(buffPassword.begin(), buffPassword.end(), wchar_t(160u)), buffPassword.end());
 	_currentUser->setPass(buffPassword);
@@ -344,12 +345,12 @@ auto Chat::change_password()  ->void
 
 }
 
-auto Chat::change_login()  ->void
+auto Chat::changeLogin()  ->void
 {
 	flush_input_buffer();
 
 	std::wregex regular(L"([\\w]{4,15})");
-	std::wstring buffLogin(15, wchar_t(160u));
+	std::wstring buffLogin(15u, wchar_t(160u));
 
 	std::wcout << L"Enter new login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
 	if (!set_user_data(buffLogin, regular))
@@ -397,7 +398,7 @@ auto Chat::change_login()  ->void
 	temp.setUsername(buffUsername);
 	temp.setPass(buffPassword);
 
-	_DB->change_login(temp);
+	_DB->changeLogin(temp);
 
 	_currentUser->setLogin(tempLogin);
 
@@ -410,7 +411,7 @@ auto Chat::change_login()  ->void
 
 auto Chat::get_info()  ->void
 {
-	SetConsoleTextAttribute(h, 5);
+	SetConsoleTextAttribute(h, 5u);
 
 	std::wcout << L'┌' << std::setfill(L'─') << std::setw(27u) << L'┐' << std::endl;
 
@@ -426,7 +427,7 @@ auto Chat::get_info()  ->void
 		<< std::setw(27u - _currentUser->getPass().size() - 10u) << L'│' << std::endl;
 
 
-	std::wcout << L'└' << std::setfill(L'─') << std::setw(27) << L'┘' << std::endl;
+	std::wcout << L'└' << std::setfill(L'─') << std::setw(27u) << L'┘' << std::endl;
 	std::wcout << std::endl;
 }
 
@@ -450,7 +451,7 @@ auto Chat::chatBox(std::wstring const& username, int const& count) const  ->void
 
 auto Chat::chatMenu() const  ->void
 {
-	SetConsoleTextAttribute(h, 11);
+	SetConsoleTextAttribute(h, 11u);
 	std::wstring menu_words[] =
 	{
 		{L"Login"},
@@ -532,7 +533,7 @@ auto Chat::action_for_user()  ->void
 	void (Chat:: * fact[])() = {
 		&Chat::sendMessage,     &Chat::getMessages,
 		&Chat::get_info,        &Chat::clear_chat,
-		&Chat::change_password, &Chat::change_login,
+		&Chat::changePassword, &Chat::changeLogin,
 	    &Chat::logout
 	};
 	int act;

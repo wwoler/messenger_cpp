@@ -114,9 +114,9 @@ auto DataBase::isExisting(User& userID)  ->bool
 	_userStream.get();
 
 	User temp(userID);
-	temp.getUsername().erase(std::remove(temp.getUsername().begin(), temp.getUsername().end(), wchar_t(160)), temp.getUsername().end());
-	temp.getLogin().erase(std::remove(temp.getLogin().begin(), temp.getLogin().end(), wchar_t(160)), temp.getLogin().end());
-	temp.getPass().erase(std::remove(temp.getPass().begin(), temp.getPass().end(), wchar_t(160)), temp.getPass().end());
+	temp.getUsername().erase(std::remove(temp.getUsername().begin(), temp.getUsername().end(), wchar_t(160u)), temp.getUsername().end());
+	temp.getLogin().erase(std::remove(temp.getLogin().begin(), temp.getLogin().end(), wchar_t(160u)), temp.getLogin().end());
+	temp.getPass().erase(std::remove(temp.getPass().begin(), temp.getPass().end(), wchar_t(160u)), temp.getPass().end());
 
 	User buff;
 	while (_userStream.good())
@@ -127,12 +127,12 @@ auto DataBase::isExisting(User& userID)  ->bool
 
 		from_json(buff);
 
-		buff.getUsername().erase(std::remove(buff.getUsername().begin(), buff.getUsername().end(), wchar_t(160)), buff.getUsername().end());
-		buff.getLogin().erase(std::remove(buff.getLogin().begin(), buff.getLogin().end(), wchar_t(160)), buff.getLogin().end());
+		buff.getUsername().erase(std::remove(buff.getUsername().begin(), buff.getUsername().end(), wchar_t(160u)), buff.getUsername().end());
+		buff.getLogin().erase(std::remove(buff.getLogin().begin(), buff.getLogin().end(), wchar_t(160u)), buff.getLogin().end());
 
 		if (!buff.getUsername().compare(temp.getUsername()) || !buff.getLogin().compare(temp.getLogin()))
 		{
-			buff.getPass().erase(std::remove(buff.getPass().begin(), buff.getPass().end(), wchar_t(160)), buff.getPass().end());
+			buff.getPass().erase(std::remove(buff.getPass().begin(), buff.getPass().end(), wchar_t(160u)), buff.getPass().end());
 			userID.setUsername(buff.getUsername());
 			userID.setPass(buff.getPass());
 			return true;
@@ -159,7 +159,7 @@ auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)  
 }
 
 
-auto DataBase::change_password(User& newData)  ->void
+auto DataBase::changePassword(User& newData)  ->void
 {
 	_userStream.seekp(_currentUserPos);
 
@@ -167,7 +167,7 @@ auto DataBase::change_password(User& newData)  ->void
 	adjustment();
 }
 
-auto DataBase::change_login(User& newData)  ->void
+auto DataBase::changeLogin(User& newData)  ->void
 {
 	_userStream.seekp(_currentUserPos);
 
