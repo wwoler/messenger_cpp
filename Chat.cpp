@@ -177,7 +177,7 @@ auto Chat::getMessages()  ->void
 		return;
 	}
 
-	//Для разметки консоли
+	/*Для разметки консоли*/
 	COORD c;
 	c.X = 1;
 	c.Y = 3;

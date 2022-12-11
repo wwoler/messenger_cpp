@@ -140,7 +140,7 @@
   <ItemGroup>
     <ClCompile Include="Chat.cpp" />
     <ClCompile Include="DataBase.cpp" />
-    <ClCompile Include="maincpp.cpp" />
+    <ClCompile Include="main.cpp" />
     <ClCompile Include="Message.cpp" />
     <ClCompile Include="User.cpp" />
   </ItemGroup>
