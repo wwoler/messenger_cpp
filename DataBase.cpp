@@ -96,7 +96,7 @@ auto DataBase::signUp(User& userID)  ->bool
 
 	_userStream.seekp(0u, std::ios::end);
 
-	/*219 - максимальный размер для класса в файле*/ 
+	/*219 - максимальный размер для объекта в файле*/ 
 	_userStream << std::setw(219) << '\n';
 
 	_userStream.seekp(-220, std::ios::cur);
@@ -115,10 +115,6 @@ auto DataBase::isExisting(User& userID)  ->bool
 	_userStream.get();
 
 	User temp(userID);
-	/*очистка входного  объекта от "пустых символов" для последующего сравнения*/
-	temp.getUsername().erase(std::remove(temp.getUsername().begin(), temp.getUsername().end(), wchar_t(160u)), temp.getUsername().end());
-	temp.getLogin().erase(std::remove(temp.getLogin().begin(), temp.getLogin().end(), wchar_t(160u)), temp.getLogin().end());
-	temp.getPass().erase(std::remove(temp.getPass().begin(), temp.getPass().end(), wchar_t(160u)), temp.getPass().end());
 
 	User buff;
 	while (_userStream.good())
@@ -129,12 +125,10 @@ auto DataBase::isExisting(User& userID)  ->bool
 
 		from_json(buff);
 
-		buff.getUsername().erase(std::remove(buff.getUsername().begin(), buff.getUsername().end(), wchar_t(160u)), buff.getUsername().end());
-		buff.getLogin().erase(std::remove(buff.getLogin().begin(), buff.getLogin().end(), wchar_t(160u)), buff.getLogin().end());
 
 		if (!buff.getUsername().compare(temp.getUsername()) || !buff.getLogin().compare(temp.getLogin()))
 		{
-			buff.getPass().erase(std::remove(buff.getPass().begin(), buff.getPass().end(), wchar_t(160u)), buff.getPass().end());
+
 			userID.setUsername(buff.getUsername());
 			userID.setPass(buff.getPass());
 			return true;

@@ -11,22 +11,18 @@ auto Chat::flush_input_buffer()  ->void
 
 auto Chat::set_user_data(std::wstring& data, std::wregex const& reg)  ->bool
 {
-	bool rez;
-	std::wstring buff;
-	std::getline(std::wcin, buff);
-	while (!std::regex_match(buff, reg))
+	std::getline(std::wcin, data);
+	while (!std::regex_match(data, reg))
 	{
 		SetConsoleTextAttribute(h, 4u);
 		std::wcout << L"Incorrect input, try again(quit to quit)\n> ";
 		SetConsoleTextAttribute(h, 11u);
-		std::getline(std::wcin, buff);
+		std::getline(std::wcin, data);
 	}
 
-	if(!(buff.compare(L"quit")) || !buff.compare(L"common_chat"))
+	if(!(data.compare(L"quit")) || !data.compare(L"common_chat"))
 		return false;
 
-	for (int i = 0; i < buff.size(); ++i)
-		data[i] = buff[i];
 
 
 	return true;
@@ -106,9 +102,7 @@ auto Chat::signUp()  ->void
 	flush_input_buffer();
 
 	std::wregex regular(L"([A-Za-z0-9_]{4,15})");
-	std::wstring login(15u, wchar_t(160u)), password(15u, wchar_t(160u)), username(15u, wchar_t(160u)); 
-	/*добавление "пустых символов" для того чтобы при записи в файл для структуры выделялось максимальное
-	кол-во места, это нужно для того при изменении логина или пароля одна структура не заехала на другую и не стерла ее */
+	std::wstring login, password, username; 
 	
 	std::wcout << L"Enter login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
 	if (!set_user_data(login, regular))
@@ -309,10 +303,10 @@ auto Chat::changePassword()  ->void
 	flush_input_buffer();
 
 	std::wregex regular(L"([A-Za-z0-9_]{4,15})");
-	std::wstring buffPassword(15u, wchar_t(160u));
+	std::wstring newPassword;
 
 	std::wcout << L"Enter new password | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
-	if (!set_user_data(buffPassword, regular))
+	if (!set_user_data(newPassword, regular))
 	{
 		system("cls");
 		SetConsoleTextAttribute(h, 4u);
@@ -320,27 +314,8 @@ auto Chat::changePassword()  ->void
 		return;
 	}
 
-	std::wstring buffLogin, buffUsername;
+	_DB->changePassword(*_currentUser);
 
-	buffLogin = _currentUser->getLogin();
-	buffUsername = _currentUser->getUsername();
-
-	for (size_t i = _currentUser->getLogin().size(); i < 15u; ++i)
-	{
-		buffUsername.push_back(wchar_t(160u));
-	}
-
-	for (size_t i = _currentUser->getUsername().size(); i < 15u; ++i)
-	{
-		buffLogin.push_back(wchar_t(160u));
-	}
-
-	User buff(buffLogin, buffPassword, buffUsername);
-	
-	_DB->changePassword(buff);
-
-	buffPassword.erase(std::remove(buffPassword.begin(), buffPassword.end(), wchar_t(160u)), buffPassword.end());
-	_currentUser->setPass(buffPassword);
 
 	system("cls");
 	SetConsoleTextAttribute(h, 10u);
@@ -354,28 +329,23 @@ auto Chat::changeLogin()  ->void
 	flush_input_buffer();
 
 	std::wregex regular(L"([A-Za-z0-9_]{4,15})");
-	std::wstring buffLogin(15u, wchar_t(160u));
+	std::wstring newLogin;
 
 	std::wcout << L"Enter new login | min;max length[4;15] | allowed characters[a-z A-Z 0-9 _] | (quit to quit):\n> ";
-	if (!set_user_data(buffLogin, regular))
+	if (!set_user_data(newLogin, regular))
 	{
 		system("cls");
 		SetConsoleTextAttribute(h, 4u);
 		std::wcout << L"Changing password has been denied\n\n";
+
 		return;
 	}
 
 
-	std::wstring buffPassword, buffUsername;
-
-	buffPassword = _currentUser->getPass();
-	buffUsername = _currentUser->getUsername();
-
-	User temp(buffLogin, buffPassword);
-
 	auto buffCurrentPos = _DB->_currentUserPos;
+	User tempUser(newLogin);
 
-	if (_DB->isExisting(temp))
+	if (_DB->isExisting(tempUser))
 	{
 		system("cls");
 		SetConsoleTextAttribute(h, 4u);
@@ -383,26 +353,11 @@ auto Chat::changeLogin()  ->void
 		return;
 	}
 
+	_currentUser->setLogin(newLogin);
+
 	_DB->_currentUserPos = buffCurrentPos;
-	temp.setUsername(buffUsername);
+	_DB->changeLogin(*_currentUser);
 
-	for (size_t i = _currentUser->getPass().size(); i < 15u; ++i)
-	{
-		buffPassword.push_back(wchar_t(160u));
-	}
-
-	for (size_t i = _currentUser->getUsername().size(); i < 15u; ++i)
-	{
-		buffUsername.push_back(wchar_t(160u));
-	}
-
-	temp.setLogin(buffLogin);
-	temp.setUsername(buffUsername);
-	temp.setPass(buffPassword);
-
-	_DB->changeLogin(temp);
-
-	_currentUser->setLogin(buffLogin);
 
 	system("cls");
 	SetConsoleTextAttribute(h, 10u);
