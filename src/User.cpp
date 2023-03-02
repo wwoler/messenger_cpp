@@ -1,4 +1,3 @@
-#pragma once
 #include"User.h"
 
 User::User(std::wstring const& login, std::wstring const& pass) :
@@ -13,7 +12,7 @@ auto User::getPass() 	                                    ->std::wstring&
 {
 	return _pass;
 }
- 
+
 auto User::getUsername()	                                ->std::wstring&
 {
 	return _username;

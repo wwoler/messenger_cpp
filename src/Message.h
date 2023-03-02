@@ -19,7 +19,6 @@ public:
 	auto setContent(std::wstring const&)  ->void;
 	auto setTime(time_t const&)           ->void;
 
-
 private:
 	std::wstring        _sender;
 	std::wstring        _receiver;

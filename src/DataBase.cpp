@@ -2,25 +2,37 @@
 
 using json = nlohmann::json;
 
-DataBase::DataBase(std::wstring const&& path) :
+DataBase::DataBase(std::filesystem::path const&& path) :
 	_path(path)
 {
 	std::filesystem::create_directories(_path);
-	std::filesystem::create_directories(_path + L"/Messages_List");
+	std::filesystem::create_directories(_path.string() + "/Messages_List");
 
-	std::ofstream test(_path + L"users.json", std::ios::app);
-	test.close();
+	_messageStream.open(_path.string() + "/Messages_List/common_chat.json",
+		std::ios::in | std::ios::out | std::ios::binary);
 
-	_messageStream.open(_path + L"./Messages_List/common_chat.json", std::ios::in | std::ios::out | std::ios::app);
-	_userStream.open(_path + L"users.json", std::ios::in | std::ios::out | std::ios::ate);
+	if (!_messageStream.is_open())
+	{
+		_messageStream.open(_path.string() + "/Messages_List/common_chat.json",
+			std::ios::in | std::ios::out | std::ios::trunc | std::ios::binary);
+	}
+
+	_userStream.open(_path.string() + "users.json",
+		std::ios::in | std::ios::out | std::ios::binary);
+
+	if (!_userStream.is_open())
+	{
+		_userStream.open(_path.string() + "users.json",
+			std::ios::in | std::ios::out | std::ios::trunc | std::ios::binary);
+	}
 
 	_messageStream.close();
 }
 
-auto DataBase::adjustment()  ->void
+auto DataBase::adjustment()  -> void
 {
 	auto pos = _userStream.tellp();
-	_userStream.seekp(pos);           //θη τΰιλΰ
+	_userStream.seekp(pos);           //ΧΧ— Χ¤ΧΧ™Χ›Χ
 	int count = 0;
 	char ch = _userStream.get();
 	while (ch != '\n')
@@ -29,7 +41,7 @@ auto DataBase::adjustment()  ->void
 		ch = _userStream.get();
 	}
 
-	_userStream.seekg(pos);          // β τΰιλ
+	_userStream.seekg(pos);          // Χ’ Χ¤ΧΧ™Χ›
 	for (int i = 0; i < count; ++i)
 	{
 		_userStream.put(' ');
@@ -39,7 +51,7 @@ auto DataBase::adjustment()  ->void
 auto DataBase::to_json(User& user)  ->void
 {
 	json js;
-	js["Login"]    = user.getLogin();
+	js["Login"] = user.getLogin();
 	js["Password"] = user.getPass();
 	js["Username"] = user.getUsername();
 	_userStream << js;
@@ -49,9 +61,9 @@ auto DataBase::to_json(User& user)  ->void
 auto DataBase::to_json(Message& mess)  ->void
 {
 	json js;
-	js["Content"]  = mess.getContent();
-	js["Sender"]   = mess.getSender();
-	js["Time"]     = mess.getTime();
+	js["Content"] = mess.getContent();
+	js["Sender"] = mess.getSender();
+	js["Time"] = mess.getTime();
 	_messageStream << js;
 }
 
@@ -59,7 +71,7 @@ auto DataBase::from_json(User& user)  ->void
 {
 	json js;
 	_userStream >> js;
-	
+
 	user.setLogin(js["Login"]);
 	user.setPass(js["Password"]);
 	user.setUsername(js["Username"]);
@@ -96,10 +108,11 @@ auto DataBase::signUp(User& userID)  ->bool
 
 	_userStream.seekp(0u, std::ios::end);
 
-	/*219 - μΰκρθμΰλόνϋι πΰημεπ δλÿ ξαϊεκςΰ β τΰιλε*/ 
+	/*219 - ΧΧΧΧ΅ΧΧΧΧ›οΆ•ΧοΆ”Χ™ Χ ΧΧ—ΧΧ•Χ  Χ”Χ›οΆ– ΧΧ‘ΧªΧ•ΧΧΆΧ Χ’ Χ¤ΧΧ™Χ›Χ•*/ 
+
 	_userStream << std::setw(219) << '\n';
 
-	_userStream.seekp(-220, std::ios::cur);
+	_userStream.seekp(-219, std::ios::cur);
 
 	to_json(userID);
 
@@ -114,8 +127,6 @@ auto DataBase::isExisting(User& userID)  ->bool
 	
 	_userStream.get();
 
-	User temp(userID);
-
 	User buff;
 	while (_userStream.good())
 	{
@@ -126,9 +137,8 @@ auto DataBase::isExisting(User& userID)  ->bool
 		from_json(buff);
 
 
-		if (!buff.getUsername().compare(temp.getUsername()) || !buff.getLogin().compare(temp.getLogin()))
+		if (!buff.getUsername().compare(userID.getUsername()) || !buff.getLogin().compare(userID.getLogin()))
 		{
-
 			userID.setUsername(buff.getUsername());
 			userID.setPass(buff.getPass());
 			return true;
@@ -150,7 +160,9 @@ auto DataBase::clearChat(std::wstring const& user1, std::wstring const& user2)  
 		dialog.assign(user1 + user2) :
 		dialog.assign(user2 + user1);
 
-	_messageStream.open(_path + L"Messages_List/" + dialog + L".json", std::ios::out | std::ios::trunc);
+	std::string dialog_(dialog.begin(), dialog.end());
+
+	_messageStream.open(_path.string() + "Messages_List/" + dialog_ + ".json", std::ios::out | std::ios::trunc);
 	_messageStream.close();
 }
 
@@ -177,7 +189,7 @@ auto DataBase::sendMessage(Message& message)  ->void
 {
 	if (!message.getReceiver().compare(L"common_chat"))
 	{
-		_messageStream.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::out);
+		_messageStream.open(_path.string() + "Messages_List/common_chat.json", std::ios::app | std::ios::out);
 	}
 
 	else
@@ -187,7 +199,9 @@ auto DataBase::sendMessage(Message& message)  ->void
 			dialog.assign(message.getReceiver() + message.getSender()) :
 			dialog.assign(message.getSender() + message.getReceiver());
 
-		_messageStream.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app | std::ios::out);
+		std::string dialog_(dialog.begin(), dialog.end());
+
+		_messageStream.open(_path.string() + "Messages_List/" + dialog_ + ".json", std::ios::app | std::ios::out);
 	}
 
 	to_json(message);
@@ -201,7 +215,7 @@ auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)  ->
 
 	if (!from.compare(L"common_chat"))
 	{
-		_messageStream.open(_path + L"Messages_List/common_chat.json", std::ios::app | std::ios::in);
+		_messageStream.open(_path.string() + "Messages_List/common_chat.json", std::ios::app | std::ios::in);
 	}
 	else
 	{
@@ -210,7 +224,9 @@ auto DataBase::getMessages(std::wstring const& from, std::wstring const& to)  ->
 			dialog.assign(to + from) :
 			dialog.assign(from + to);
 
-		_messageStream.open(_path + L"Messages_List/" + dialog + L".json", std::ios::app | std::ios::in);
+		std::string dialog_(dialog.begin(), dialog.end());
+
+		_messageStream.open(_path.string() + "Messages_List/" + dialog_ + ".json", std::ios::app | std::ios::in);
 	}
 
 	_messageStream.get();

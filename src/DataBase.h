@@ -10,6 +10,7 @@
 #include <chrono>
 #include <nlohmann/json.hpp>
 
+
 class DataBase : public Singleton<DataBase>
 {
 private:
@@ -17,7 +18,7 @@ private:
 
 	std::fstream                    _userStream;
 	std::fstream                    _messageStream;
-	std::wstring                    _path;
+	std::filesystem::path           _path;
 	std::streampos                  _currentUserPos;
 
 	auto to_json(User& user)        ->void;
@@ -44,9 +45,8 @@ private:
 	auto adjustment()                                                        ->void;
 
 
-
 protected:
-	DataBase(std::wstring const&& path = L"./base/");
+	DataBase(std::filesystem::path const&& path = L"./base/");
 
 public:
 

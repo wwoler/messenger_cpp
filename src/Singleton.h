@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 
 class Erase
 {
@@ -20,7 +21,7 @@ public:
 	static T& get_instance()
 	{
 		if (!instance)
-			instance = new T_Instance;
+			instance = std::make_shared<T_Instance>();
 		return *instance;
 	}
 
@@ -33,5 +34,5 @@ private:
 		T_Instance() : T() {}
 	};
 
-	static inline T* instance = nullptr;
+	static inline std::shared_ptr<T> instance = nullptr;
 };
