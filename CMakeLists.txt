@@ -8,23 +8,23 @@ set(JSON_BuildTests OFF CACHE INTERNAL "")
 
 add_subdirectory(external/json)
 
-add_executable(rez 
-	main.cpp
-	User.h 
-	User.cpp
-	Message.h 
-	Message.cpp
-	ConsoleManager.h 
-	ConsoleManager.cpp
-	DataBase.h 
-	DataBase.cpp
-	Chat.h
-	Chat.cpp
-	Singleton.h
+add_executable(executable
+	src/main.cpp
+	src/User.h 
+	src/User.cpp
+	src/Message.h 
+	src/Message.cpp
+	src/ConsoleManager.h 
+	src/ConsoleManager.cpp
+	src/DataBase.h 
+	src/DataBase.cpp
+	src/Chat.h
+	src/Chat.cpp
+	src/Singleton.h
 )
 
 
-target_link_libraries(rez nlohmann_json)
+target_link_libraries(executable nlohmann_json)
 
 
 
